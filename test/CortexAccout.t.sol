@@ -64,4 +64,70 @@ contract CortexAccTest is Test {
         CrtxAcc.execute(address(this), 20 wei, (""));
         assertEq(address(this).balance, balancebefore + 20 wei);
     }
+
+    function testEcecute_accesDenied() public {
+        uint256 balancebefore = address(this).balance;
+        vm.startPrank(attacker);
+
+        vm.deal(address(CrtxAcc), 21 ether);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CortexAccount.AccessDenied.selector,
+                attacker,
+                1
+            )
+        );
+        CrtxAcc.execute(address(this), 20 wei, (""));
+    }
+
+    function testvalidateUserOp_attackerSign() public {
+        uint256 privateKay = 15;
+        bytes32 massageHash = keccak256("attackers sign");
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(
+            massageHash
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(15, ethSignedHash);
+
+        CortexAccount.UserOperation memory user0p = CortexAccount
+            .UserOperation({
+                sender: attacker,
+                nonce: 0,
+                initCode: (""),
+                callData: (""),
+                callGasLimit: 0,
+                verificationGasLimit: 0,
+                preVerificationGas: 0,
+                maxFeePerGas: 0,
+                maxPriotrityFeePerGas: 0,
+                paymasterAndData: (""),
+                signature: (abi.encodePacked(r, s, v))
+            });
+
+        vm.startPrank(entryPoint);
+        uint256 result = CrtxAcc.validateUserOp(user0p, massageHash, 0);
+
+        assertEq(result, 1);
+    }
+
+    function testValidateUserOp_notEntryPoint() public {
+        CortexAccount.UserOperation memory user0p = CortexAccount
+            .UserOperation({
+                sender: attacker,
+                nonce: 0,
+                initCode: (""),
+                callData: (""),
+                callGasLimit: 0,
+                verificationGasLimit: 0,
+                preVerificationGas: 0,
+                maxFeePerGas: 0,
+                maxPriotrityFeePerGas: 0,
+                paymasterAndData: (""),
+                signature: ("")
+            });
+
+        vm.startPrank(attacker);
+        uint256 result = CrtxAcc.validateUserOp(user0p, bytes32(0), 0);
+
+        assertEq(result, 1);
+    }
 }
