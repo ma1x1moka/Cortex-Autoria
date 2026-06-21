@@ -66,7 +66,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
     // mapping
     mapping(uint256 => DealData) public dealsId;
     mapping(address => uint256[]) public Paymastercheck;
-
+    mapping(address => uint256) public reputation;
     // modifier onlyRole(uint256 id, address mustBe) {
     //     if (msg.sender != mustBe) {
     //         revert AccessDenied(msg.sender, block.timestamp);
@@ -84,7 +84,11 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
     function getDealAddress(address ask) external view returns (uint256[] memory) {
         return (Paymastercheck[ask]);
     }
-
+    // function getSellerReputation(
+    //     address ask
+    // ) external view returns (uint256 memory) {
+    //     return (reputation[ask]);
+    // }
     // cоздаем сделку
 
     function createAnnouncement(uint256 price, uint256 commission) public payable {
@@ -202,6 +206,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
 
         if (decision == true) {
             dealsId[id].statusData = StatusData.Completed;
+            reputation[dealsId[id].seller] += 1;
             emit Approved(dealsId[id].arbiter, id, block.timestamp);
 
             (bool sendToArbiter,) = payable(dealsId[id].arbiter).call{value: dealsId[id].arbiterPart}("");
