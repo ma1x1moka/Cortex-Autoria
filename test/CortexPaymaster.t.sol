@@ -7,9 +7,9 @@ import "forge-std/Test.sol";
 import "../src/core/Autoria.sol";
 import "../src/account/CortexPaymaster.sol";
 import "../src/account/CortexAccount.sol";
-import {
-    MessageHashUtils
-} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+
+import {PackedUserOperation} from "account-abstraction/interfaces/PackedUserOperation.sol";
 
 contract CrtxPaymasterTest is Test {
     // variables
@@ -27,11 +27,7 @@ contract CrtxPaymasterTest is Test {
 
         CrtxAcc = new CortexAccount(entryPoint);
 
-        CrtxPay = new CortexPaymaster(
-            address(CrtxAcc),
-            address(autoria),
-            entryPoint
-        );
+        CrtxPay = new CortexPaymaster(address(CrtxAcc), address(autoria), entryPoint);
     }
 
     function testvalidatePaymasterUser0p() public {
@@ -40,26 +36,19 @@ contract CrtxPaymasterTest is Test {
 
         autoria.createAnnouncement{value: 20}(200, 20);
 
-        CortexAccount.UserOperation memory user0p = CortexAccount
-            .UserOperation({
-                sender: seller,
-                nonce: 0,
-                initCode: (""),
-                callData: (""),
-                callGasLimit: 0,
-                verificationGasLimit: 0,
-                preVerificationGas: 0,
-                maxFeePerGas: 0,
-                maxPriotrityFeePerGas: 0,
-                paymasterAndData: (""),
-                signature: ("")
-            });
+        PackedUserOperation memory user0p = PackedUserOperation({
+            sender: seller,
+            nonce: 0,
+            initCode: "",
+            callData: "",
+            accountGasLimits: bytes32(0),
+            preVerificationGas: 0,
+            gasFees: bytes32(0),
+            paymasterAndData: "",
+            signature: ""
+        });
 
-        (, uint256 result) = CrtxPay.validatePaymasterUserOp(
-            user0p,
-            bytes32(0),
-            0
-        );
+        (, uint256 result) = CrtxPay.validatePaymasterUserOp(user0p, bytes32(0), 0);
         assertEq(result, 0);
     }
 
@@ -67,26 +56,19 @@ contract CrtxPaymasterTest is Test {
         vm.deal(seller, 20 ether);
         vm.prank(seller);
 
-        CortexAccount.UserOperation memory user0p = CortexAccount
-            .UserOperation({
-                sender: seller,
-                nonce: 0,
-                initCode: (""),
-                callData: (""),
-                callGasLimit: 0,
-                verificationGasLimit: 0,
-                preVerificationGas: 0,
-                maxFeePerGas: 0,
-                maxPriotrityFeePerGas: 0,
-                paymasterAndData: (""),
-                signature: ("")
-            });
+        PackedUserOperation memory user0p = PackedUserOperation({
+            sender: seller,
+            nonce: 0,
+            initCode: "",
+            callData: "",
+            accountGasLimits: bytes32(0),
+            preVerificationGas: 0,
+            gasFees: bytes32(0),
+            paymasterAndData: "",
+            signature: ""
+        });
 
-        (, uint256 result) = CrtxPay.validatePaymasterUserOp(
-            user0p,
-            bytes32(0),
-            0
-        );
+        (, uint256 result) = CrtxPay.validatePaymasterUserOp(user0p, bytes32(0), 0);
         assertEq(result, 1);
     }
 }

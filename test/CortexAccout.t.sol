@@ -4,9 +4,7 @@ pragma solidity ^0.8.27;
 import "forge-std/Test.sol";
 import "../src/core/MaliciousUser.sol";
 import "../src/account/CortexAccount.sol";
-import {
-    MessageHashUtils
-} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract CortexAccTest is Test {
     CortexAccount public CrtxAcc;
@@ -30,25 +28,22 @@ contract CortexAccTest is Test {
     function testvalidateUserOp() public {
         uint256 privateKay = 17;
         bytes32 massageHash = keccak256("owners sign");
-        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(
-            massageHash
-        );
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(massageHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(17, ethSignedHash);
 
-        CortexAccount.UserOperation memory user0p = CortexAccount
-            .UserOperation({
-                sender: owner,
-                nonce: 0,
-                initCode: (""),
-                callData: (""),
-                callGasLimit: 0,
-                verificationGasLimit: 0,
-                preVerificationGas: 0,
-                maxFeePerGas: 0,
-                maxPriotrityFeePerGas: 0,
-                paymasterAndData: (""),
-                signature: (abi.encodePacked(r, s, v))
-            });
+        CortexAccount.UserOperation memory user0p = CortexAccount.UserOperation({
+            sender: owner,
+            nonce: 0,
+            initCode: (""),
+            callData: (""),
+            callGasLimit: 0,
+            verificationGasLimit: 0,
+            preVerificationGas: 0,
+            maxFeePerGas: 0,
+            maxPriotrityFeePerGas: 0,
+            paymasterAndData: (""),
+            signature: (abi.encodePacked(r, s, v))
+        });
 
         vm.startPrank(entryPoint);
         uint256 result = CrtxAcc.validateUserOp(user0p, massageHash, 0);
@@ -70,38 +65,29 @@ contract CortexAccTest is Test {
         vm.startPrank(attacker);
 
         vm.deal(address(CrtxAcc), 21 ether);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                CortexAccount.AccessDenied.selector,
-                attacker,
-                1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(CortexAccount.AccessDenied.selector, attacker, 1));
         CrtxAcc.execute(address(this), 20 wei, (""));
     }
 
     function testvalidateUserOp_attackerSign() public {
         uint256 privateKay = 15;
         bytes32 massageHash = keccak256("attackers sign");
-        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(
-            massageHash
-        );
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(massageHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(15, ethSignedHash);
 
-        CortexAccount.UserOperation memory user0p = CortexAccount
-            .UserOperation({
-                sender: attacker,
-                nonce: 0,
-                initCode: (""),
-                callData: (""),
-                callGasLimit: 0,
-                verificationGasLimit: 0,
-                preVerificationGas: 0,
-                maxFeePerGas: 0,
-                maxPriotrityFeePerGas: 0,
-                paymasterAndData: (""),
-                signature: (abi.encodePacked(r, s, v))
-            });
+        CortexAccount.UserOperation memory user0p = CortexAccount.UserOperation({
+            sender: attacker,
+            nonce: 0,
+            initCode: (""),
+            callData: (""),
+            callGasLimit: 0,
+            verificationGasLimit: 0,
+            preVerificationGas: 0,
+            maxFeePerGas: 0,
+            maxPriotrityFeePerGas: 0,
+            paymasterAndData: (""),
+            signature: (abi.encodePacked(r, s, v))
+        });
 
         vm.startPrank(entryPoint);
         uint256 result = CrtxAcc.validateUserOp(user0p, massageHash, 0);
@@ -110,20 +96,19 @@ contract CortexAccTest is Test {
     }
 
     function testValidateUserOp_notEntryPoint() public {
-        CortexAccount.UserOperation memory user0p = CortexAccount
-            .UserOperation({
-                sender: attacker,
-                nonce: 0,
-                initCode: (""),
-                callData: (""),
-                callGasLimit: 0,
-                verificationGasLimit: 0,
-                preVerificationGas: 0,
-                maxFeePerGas: 0,
-                maxPriotrityFeePerGas: 0,
-                paymasterAndData: (""),
-                signature: ("")
-            });
+        CortexAccount.UserOperation memory user0p = CortexAccount.UserOperation({
+            sender: attacker,
+            nonce: 0,
+            initCode: (""),
+            callData: (""),
+            callGasLimit: 0,
+            verificationGasLimit: 0,
+            preVerificationGas: 0,
+            maxFeePerGas: 0,
+            maxPriotrityFeePerGas: 0,
+            paymasterAndData: (""),
+            signature: ("")
+        });
 
         vm.startPrank(attacker);
         uint256 result = CrtxAcc.validateUserOp(user0p, bytes32(0), 0);

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.27;
-import {
-    MessageHashUtils
-} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -46,14 +44,11 @@ contract CortexAccount {
     address public owner;
     IEntryPoint public immutable entryPoint;
 
-    function validateUserOp(
-        UserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 missingAccountFunds
-    ) external returns (uint256 validationData) {
-        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
-            userOpHash
-        );
+    function validateUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+        external
+        returns (uint256 validationData)
+    {
+        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
 
         if (msg.sender != address(entryPoint)) {
             return 1;
@@ -67,12 +62,8 @@ contract CortexAccount {
         return 0;
     }
 
-    function execute(
-        address to,
-        uint256 value,
-        bytes calldata data
-    ) external chackRights {
-        (bool call, ) = payable(to).call{value: value}(data);
+    function execute(address to, uint256 value, bytes calldata data) external chackRights {
+        (bool call,) = payable(to).call{value: value}(data);
         if (call != true) {
             revert callFailed(block.timestamp);
         }
