@@ -34,4 +34,23 @@ contract Decoder {
 
         return DealId;
     }
+
+    // // Задача 1 (в Decoder.sol, новая функция snbx5):
+
+    // Напиши функцию snbx5, которая:
+    // - принимает address to и uint256 amount
+    // - возвращает bytes memory — закодированный вызов функции payForCar(uint256) у контракта to, как будто это callData, который потом можно передать в .call()
+
+    // Подсказка-направление (не решение): тебе нужен abi.encodeWithSelector или abi.encodeWithSignature — выбери сам, какой удобнее, и подумай, зачем там вообще нужен to, если по факту в bytes он не попадёт (это на будущее, для следующего шага).
+
+    // Пиши в Sublime, компилируй через forge build, кидай сюда код и что выдал компилятор/тест.
+
+    function snbx5(address komenskeho21, uint256 amount) external returns (bytes memory) {
+        bytes4 selector = bytes4(keccak256("payForCar(uint256)"));
+
+        bytes memory result = abi.encodeWithSelector(selector, amount);
+
+        return result;
+    }
 }
+

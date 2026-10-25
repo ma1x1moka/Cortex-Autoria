@@ -14,14 +14,18 @@ contract CortexPaymaster is IPaymaster {
         autoria = Autoria(_autoria);
         entryPoint = IEntryPoint(_entryPoint);
     }
+
+    error AccessDenied(address sender);
+
     // variabless
 
     IEntryPoint public immutable entryPoint;
 
     CortexAccount public cortexAccount;
-    Autoria public autoria;
+    Autoria public immutable autoria;
 
     // functions
+
     function validatePaymasterUserOp(PackedUserOperation calldata user0p, bytes32 user0pHash, uint256 maxCost)
         external
         returns (bytes memory context, uint256 validationData)
@@ -41,16 +45,15 @@ contract CortexPaymaster is IPaymaster {
     }
 
     function postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
-        external {
-        //     uint256 RepDiscount = 10;
-        //     uint256 Rep = autoria.reputation(seller);
-        //     if (RepDiscount >= Rep) {
-        //         uint256 discountCost = actualGasCost - Rep;
-        //     }
-        // }
+        external
+    {
+        if (msg.sender != address(entryPoint)) {
+            revert AccessDenied(msg.sender);
+        }
     }
 
     receive() external payable {
         entryPoint.depositTo{value: msg.value}(address(this));
     }
 }
+

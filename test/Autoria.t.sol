@@ -17,6 +17,7 @@ contract AutoriaTest is Test, IAutoriaEvents {
     address robber = makeAddr("robber");
     address buyer2 = makeAddr("buyer2");
     address buyer3 = makeAddr("buyer3");
+    address seller2 = makeAddr("seller2");
 
     // constatns
     uint256 public constant CAR_PRICE = 100000 ether;
@@ -334,4 +335,25 @@ contract AutoriaTest is Test, IAutoriaEvents {
         assertEq(uint256(autoria.getDealData(1).statusData), 3);
         assertEq(address(autoria).balance, CAR_PRICE + COMMISSION);
     }
+
+    function testArbiterNotFound2() public {
+        // // DEAL1
+
+        // vm.startPrank(seller);
+        // vm.deal(seller, COMMISSION);
+        // autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+        // vm.stopPrank;
+        // // ---
+        // vm.deal(buyer, CAR_PRICE);
+        // vm.startPrank(buyer);
+        // autoria.payForCar{value: CAR_PRICE}(1);
+        // vm.stopPrank();
+        // //--
+        // autoria.setArbiter(arbiter);
+        // vm.startPrank(arbiter);
+        // autoria.approveDeal(arbiter, true);
+        // vm.stopPrank();
+        // // --
+
+        }
 }
