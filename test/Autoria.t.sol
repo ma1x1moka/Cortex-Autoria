@@ -30,14 +30,7 @@ contract AutoriaTest is Test, IAutoriaEvents {
     // test Creating Deal
     function testCreateAnnouncement() public {
         vm.expectEmit();
-        emit DealCreated(
-            1,
-            seller,
-            CAR_PRICE,
-            COMMISSION,
-            COMMISSION,
-            block.timestamp
-        );
+        emit DealCreated(1, seller, CAR_PRICE, COMMISSION, COMMISSION, block.timestamp);
         vm.startPrank(seller);
 
         vm.deal(seller, COMMISSION);
@@ -158,10 +151,7 @@ contract AutoriaTest is Test, IAutoriaEvents {
         vm.stopPrank();
 
         assertEq(uint256(autoria.getDealData(1).statusData), 4);
-        assertEq(
-            seller.balance,
-            sellerBefore + (CAR_PRICE - COMMISSION) + COMMISSION
-        );
+        assertEq(seller.balance, sellerBefore + (CAR_PRICE - COMMISSION) + COMMISSION);
         assertEq(arbiter.balance, arbiterBefore + COMMISSION);
         assertEq(address(autoria).balance, 0);
     }
@@ -190,10 +180,7 @@ contract AutoriaTest is Test, IAutoriaEvents {
         vm.stopPrank();
 
         assertEq(uint256(autoria.getDealData(1).statusData), 4);
-        assertEq(
-            seller.balance,
-            sellerBefore + (CAR_PRICE - COMMISSION) + COMMISSION
-        );
+        assertEq(seller.balance, sellerBefore + (CAR_PRICE - COMMISSION) + COMMISSION);
         assertEq(arbiter.balance, arbiterBefore + COMMISSION);
         assertEq(address(autoria).balance, 0);
     }
@@ -260,13 +247,7 @@ contract AutoriaTest is Test, IAutoriaEvents {
         vm.startPrank(seller);
 
         vm.deal(seller, 20 ether);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Autoria.CommissionCantBeBiggerThanPrice.selector,
-                14 ether,
-                20 ether
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Autoria.CommissionCantBeBiggerThanPrice.selector, 14 ether, 20 ether));
         autoria.createAnnouncement{value: 20 ether}(14 ether, 20 ether);
         vm.stopPrank();
     }
@@ -335,7 +316,7 @@ contract AutoriaTest is Test, IAutoriaEvents {
         autoria.cancel(1);
     }
 
-    function testAproveDea_AccessDenied() public {
+    function testAproveDeal_AccessDenied() public {
         // CreatingDeal
         vm.startPrank(seller);
         vm.deal(seller, COMMISSION);
@@ -347,9 +328,7 @@ contract AutoriaTest is Test, IAutoriaEvents {
         autoria.payForCar{value: CAR_PRICE}(1);
 
         autoria.setArbiter(1);
-        vm.expectRevert(
-            abi.encodeWithSelector(Autoria.AccessDenied.selector, seller, 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Autoria.AccessDenied.selector, seller, 1));
         vm.prank(seller);
         autoria.approveDeal(1, true);
 
@@ -384,13 +363,29 @@ contract AutoriaTest is Test, IAutoriaEvents {
 
         vm.startPrank(buyer2);
         autoria.arbiterNotFound(2);
-        vm.expectRevert(
-            abi.encodeWithSelector(Autoria.InvalidStatus.selector, buyer2)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Autoria.InvalidStatus.selector, buyer2));
 
         autoria.arbiterNotFound(2);
         vm.stopPrank();
 
+        assertEq(address(autoria).balance, CAR_PRICE + COMMISSION);
+    }
+
+    function testSetArbiter_revert_buyerIsArbiter() public {
+        vm.startPrank(seller);
+        vm.deal(seller, COMMISSION);
+        autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+        vm.stopPrank();
+        vm.deal(buyer, CAR_PRICE);
+        vm.startPrank(buyer);
+        autoria.payForCar{value: CAR_PRICE}(1);
+        // attack
+        vm.expectRevert(abi.encodeWithSelector(Autoria.AccessDenied.selector, buyer, block.timestamp));
+
+        autoria.setArbiter(1);
+
+        assertEq(uint256(autoria.getDealData(1).statusData), 1);
+        assertEq(address(autoria.getDealData(1).arbiter), address(0));
         assertEq(address(autoria).balance, CAR_PRICE + COMMISSION);
     }
 }

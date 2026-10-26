@@ -81,9 +81,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
         return dealsId[id];
     }
 
-    function getDealAddress(
-        address ask
-    ) external view returns (uint256[] memory) {
+    function getDealAddress(address ask) external view returns (uint256[] memory) {
         return (Paymastercheck[ask]);
     }
     // function getSellerReputation(
@@ -93,10 +91,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
     // }
     // cоздаем сделку
 
-    function createAnnouncement(
-        uint256 price,
-        uint256 commission
-    ) public payable {
+    function createAnnouncement(uint256 price, uint256 commission) public payable {
         if (commission >= price) {
             revert CommissionCantBeBiggerThanPrice(price, commission);
         }
@@ -120,14 +115,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
         dealsId[id].statusData = StatusData.Listed;
         dealsId[id].timestamp = block.timestamp;
 
-        emit DealCreated(
-            id,
-            msg.sender,
-            price,
-            commission,
-            dealsId[id].sellersPledge,
-            block.timestamp
-        );
+        emit DealCreated(id, msg.sender, price, commission, dealsId[id].sellersPledge, block.timestamp);
     }
 
     // определяем арбитра
@@ -140,6 +128,10 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
         }
 
         if (msg.sender == dealsId[id].seller) {
+            revert AccessDenied(msg.sender, block.timestamp);
+        }
+
+        if (msg.sender == dealsId[id].buyer) {
             revert AccessDenied(msg.sender, block.timestamp);
         }
 
@@ -221,82 +213,35 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
             reputation[dealsId[id].seller] += 1;
             emit Approved(dealsId[id].arbiter, id, block.timestamp);
 
-            (bool sendToArbiter, ) = payable(dealsId[id].arbiter).call{
-                value: dealsId[id].arbiterPart
-            }("");
+            (bool sendToArbiter,) = payable(dealsId[id].arbiter).call{value: dealsId[id].arbiterPart}("");
             if (sendToArbiter != true) {
-                revert TransferFailed(
-                    dealsId[id].arbiter,
-                    id,
-                    dealsId[id].arbiterPart
-                );
+                revert TransferFailed(dealsId[id].arbiter, id, dealsId[id].arbiterPart);
             }
 
-            (bool sendToSeller, ) = payable(dealsId[id].seller).call{
-                value: dealsId[id].sellerPart
-            }("");
+            (bool sendToSeller,) = payable(dealsId[id].seller).call{value: dealsId[id].sellerPart}("");
             if (sendToSeller != true) {
-                revert TransferFailed(
-                    dealsId[id].seller,
-                    id,
-                    dealsId[id].sellerPart
-                );
+                revert TransferFailed(dealsId[id].seller, id, dealsId[id].sellerPart);
             }
 
-            (bool sendPledgeToSeller, ) = payable(dealsId[id].seller).call{
-                value: dealsId[id].sellersPledge
-            }("");
+            (bool sendPledgeToSeller,) = payable(dealsId[id].seller).call{value: dealsId[id].sellersPledge}("");
             if (sendPledgeToSeller != true) {
-                revert TransferFailed(
-                    dealsId[id].seller,
-                    id,
-                    dealsId[id].sellersPledge
-                );
+                revert TransferFailed(dealsId[id].seller, id, dealsId[id].sellersPledge);
             }
-            emit PledgeReturned(
-                id,
-                dealsId[id].seller,
-                dealsId[id].sellersPledge,
-                block.timestamp
-            );
+            emit PledgeReturned(id, dealsId[id].seller, dealsId[id].sellersPledge, block.timestamp);
         } else {
             dealsId[id].statusData = StatusData.Refunded;
-            emit Canceled(
-                dealsId[id].buyer,
-                msg.sender,
-                id,
-                dealsId[id].carPrice,
-                block.timestamp
-            );
+            emit Canceled(dealsId[id].buyer, msg.sender, id, dealsId[id].carPrice, block.timestamp);
 
-            (bool sendToBuyer, ) = payable(dealsId[id].buyer).call{
-                value: dealsId[id].carPrice
-            }("");
+            (bool sendToBuyer,) = payable(dealsId[id].buyer).call{value: dealsId[id].carPrice}("");
             if (sendToBuyer != true) {
-                revert TransferFailed(
-                    dealsId[id].buyer,
-                    id,
-                    dealsId[id].carPrice
-                );
+                revert TransferFailed(dealsId[id].buyer, id, dealsId[id].carPrice);
             }
 
-            (bool sendToArbiter, ) = payable(dealsId[id].arbiter).call{
-                value: dealsId[id].sellersPledge
-            }("");
+            (bool sendToArbiter,) = payable(dealsId[id].arbiter).call{value: dealsId[id].sellersPledge}("");
             if (sendToArbiter != true) {
-                revert TransferFailed(
-                    dealsId[id].arbiter,
-                    id,
-                    dealsId[id].sellersPledge
-                );
+                revert TransferFailed(dealsId[id].arbiter, id, dealsId[id].sellersPledge);
             }
-            emit PledgeSlashed(
-                id,
-                dealsId[id].seller,
-                dealsId[id].arbiter,
-                dealsId[id].sellersPledge,
-                block.timestamp
-            );
+            emit PledgeSlashed(id, dealsId[id].seller, dealsId[id].arbiter, dealsId[id].sellersPledge, block.timestamp);
         }
     }
 
@@ -321,29 +266,16 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
         dealsId[id].statusData = StatusData.Expired;
         emit TimeCancel(dealsId[id].buyer, id, block.timestamp);
 
-        (bool refund, ) = payable(dealsId[id].buyer).call{
-            value: dealsId[id].carPrice
-        }("");
+        (bool refund,) = payable(dealsId[id].buyer).call{value: dealsId[id].carPrice}("");
         if (refund != true) {
             revert RefundFailed(dealsId[id].buyer);
         }
 
-        (bool sendPledgeToSeller, ) = payable(dealsId[id].seller).call{
-            value: dealsId[id].sellersPledge
-        }("");
+        (bool sendPledgeToSeller,) = payable(dealsId[id].seller).call{value: dealsId[id].sellersPledge}("");
         if (sendPledgeToSeller != true) {
-            revert TransferFailed(
-                dealsId[id].seller,
-                id,
-                dealsId[id].sellersPledge
-            );
+            revert TransferFailed(dealsId[id].seller, id, dealsId[id].sellersPledge);
         }
-        emit PledgeReturned(
-            id,
-            dealsId[id].seller,
-            dealsId[id].sellersPledge,
-            block.timestamp
-        );
+        emit PledgeReturned(id, dealsId[id].seller, dealsId[id].sellersPledge, block.timestamp);
     }
 
     function arbiterNotFound(uint256 id) public nonReentrant {
@@ -366,37 +298,22 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
             revert Failed();
         }
 
-        if (
-            msg.sender != dealsId[id].seller && msg.sender != dealsId[id].buyer
-        ) {
+        if (msg.sender != dealsId[id].seller && msg.sender != dealsId[id].buyer) {
             revert AccessDenied(msg.sender, block.timestamp);
         }
         dealsId[id].statusData = StatusData.Expired;
         emit TimeCancel(dealsId[id].buyer, id, block.timestamp);
 
-        (bool refund, ) = payable(dealsId[id].buyer).call{
-            value: dealsId[id].carPrice
-        }("");
+        (bool refund,) = payable(dealsId[id].buyer).call{value: dealsId[id].carPrice}("");
 
         if (refund != true) {
             revert RefundFailed(dealsId[id].buyer);
         }
 
-        (bool sendPledgeToSeller, ) = payable(dealsId[id].seller).call{
-            value: dealsId[id].sellersPledge
-        }("");
+        (bool sendPledgeToSeller,) = payable(dealsId[id].seller).call{value: dealsId[id].sellersPledge}("");
         if (sendPledgeToSeller != true) {
-            revert TransferFailed(
-                dealsId[id].seller,
-                id,
-                dealsId[id].sellersPledge
-            );
+            revert TransferFailed(dealsId[id].seller, id, dealsId[id].sellersPledge);
         }
-        emit PledgeReturned(
-            id,
-            dealsId[id].seller,
-            dealsId[id].sellersPledge,
-            block.timestamp
-        );
+        emit PledgeReturned(id, dealsId[id].seller, dealsId[id].sellersPledge, block.timestamp);
     }
 }
