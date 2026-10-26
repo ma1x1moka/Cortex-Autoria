@@ -388,4 +388,24 @@ contract AutoriaTest is Test, IAutoriaEvents {
         assertEq(address(autoria.getDealData(1).arbiter), address(0));
         assertEq(address(autoria).balance, CAR_PRICE + COMMISSION);
     }
+
+    function testSetArbiter_revert_afterWaitTime() public {
+        vm.prank(seller);
+        vm.deal(seller, COMMISSION);
+        autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+        vm.deal(buyer, CAR_PRICE);
+        vm.prank(buyer);
+        autoria.payForCar{value: CAR_PRICE}(1);
+        vm.warp(block.timestamp + 16 days);
+        uint256 WaitTime = autoria.getDealData(1).waitTime;
+        vm.prank(arbiter);
+        vm.expectRevert(abi.encodeWithSelector(Autoria.WaitTimeExpired.selector, arbiter, block.timestamp, WaitTime));
+
+        autoria.setArbiter(1);
+        assertEq(uint256(autoria.getDealData(1).statusData), 1);
+        assertEq(address(autoria.getDealData(1).arbiter), address(0));
+
+        vm.prank(buyer);
+        autoria.arbiterNotFound(1);
+    }
 }

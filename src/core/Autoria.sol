@@ -51,6 +51,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
     error InvalidSellerAddr(address seller);
     error InvalidBuyerAddr(address buyer);
     error InvalidArbiterAddr(address arbiter);
+    error WaitTimeExpired(address sender, uint256 time, uint256 WaitTime);
 
     // constants
     uint256 public constant RESOLUTION_DEADLINE = 30 days;
@@ -58,6 +59,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
 
     // variables
     uint256 public dealCounter;
+
     //  DealData storage d = dealsId[id];
 
     // uint256 public carPrice = 20000 ether;
@@ -141,6 +143,10 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
             Paymastercheck[msg.sender].push(id);
             emit ArbiterSet(msg.sender, id, block.timestamp);
         } else if (dealsId[id].statusData == StatusData.FastPay) {
+            if (block.timestamp >= dealsId[id].waitTime) {
+                revert WaitTimeExpired(msg.sender, block.timestamp, dealsId[id].waitTime);
+            }
+
             dealsId[id].arbiter = msg.sender;
             dealsId[id].statusData = StatusData.Funded;
             dealsId[id].deadline = block.timestamp + RESOLUTION_DEADLINE;
