@@ -408,4 +408,82 @@ contract AutoriaTest is Test, IAutoriaEvents {
         vm.prank(buyer);
         autoria.arbiterNotFound(1);
     }
+
+    function testCancelAnnoucement() public {
+        vm.startPrank(seller);
+        vm.deal(seller, COMMISSION);
+        uint256 before = address(seller).balance;
+
+        autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+        vm.expectEmit();
+        emit CanceledBySeller(seller, block.timestamp, 1);
+
+        autoria.cancelAnnouncement(1, true);
+
+        vm.stopPrank();
+        assertEq(before, address(seller).balance);
+        Autoria.DealData memory get = autoria.getDealData(1);
+
+        assertEq(uint256(get.statusData), 7);
+    }
+
+    function testCancelAnnoucement_RevertAccessDenied() public {
+        vm.deal(seller, COMMISSION);
+        vm.prank(seller);
+        autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+
+        vm.prank(robber);
+        vm.expectRevert(abi.encodeWithSelector(Autoria.AccessDenied.selector, robber, block.timestamp));
+        autoria.cancelAnnouncement(1, true);
+    }
+
+    function testCancelAnnoucement_RevertInvalidStatus() public {
+        vm.deal(seller, COMMISSION);
+        vm.prank(seller);
+        autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+
+        vm.deal(buyer, CAR_PRICE);
+        uint256 sellerBefore = address(seller).balance;
+        vm.prank(buyer);
+        autoria.payForCar{value: CAR_PRICE}(1);
+        uint256 ContractBefore = address(autoria).balance;
+        vm.startPrank(seller);
+        vm.expectRevert(abi.encodeWithSelector(Autoria.InvalidStatus.selector, seller));
+
+        autoria.cancelAnnouncement(1, true);
+        vm.stopPrank();
+
+        assertEq(ContractBefore, address(autoria).balance);
+        assertEq(sellerBefore, address(seller).balance);
+    }
+
+    function testCancelAnnoucement_Revert() public {
+        vm.deal(seller, COMMISSION);
+
+        vm.startPrank(seller);
+        autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+
+        uint256 ContractBefore = address(autoria).balance;
+        vm.expectRevert(abi.encodeWithSelector(Autoria.sellerCancelled.selector, 1, block.timestamp));
+        autoria.cancelAnnouncement(1, false);
+        vm.stopPrank();
+
+        assertEq(address(seller).balance, 0);
+        assertEq(ContractBefore, address(autoria).balance);
+    }
+
+    function testCancelAnnoucement_RevertInvalidStatus_2x() public {
+        testCancelAnnoucement();
+
+        vm.startPrank(seller);
+        vm.deal(seller, COMMISSION);
+        autoria.createAnnouncement{value: COMMISSION}(CAR_PRICE, COMMISSION);
+
+        vm.expectRevert(abi.encodeWithSelector(Autoria.InvalidStatus.selector, seller));
+
+        autoria.cancelAnnouncement(1, true);
+
+        vm.stopPrank();
+        assertEq(address(seller).balance, 0);
+    }
 }

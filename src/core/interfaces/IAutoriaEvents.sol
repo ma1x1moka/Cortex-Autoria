@@ -6,6 +6,7 @@ interface IAutoriaEvents {
     event Deposit(address indexed _buyer, uint256 _amount, uint256 time);
     event Approved(address indexed _arbiter, uint256 indexed id, uint256 time);
     event Canceled(address indexed _buyer, address arbiter, uint256 id, uint256 _amount, uint256 time);
+    event CanceledBySeller(address indexed _seller, uint256 time, uint256 indexed id);
     event PayArbiterDone(address indexed _arbiter, uint256 _amount, uint256 time);
     event PayPledgeRequired(address indexed sender, uint256 amount);
     event ArbiterSet(address indexed _arbiter, uint256 indexed id, uint256 time);

@@ -33,7 +33,8 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
         Funded, // 3 (окупатель оплатил carPrice, деньги в контракте, можно решать)
         Completed, // 4 ( арбитр подтвердил сделку, выплаты прошли (продавцу + арбитру))
         Refunded, // 5 (арбитр отменил, выплаты прошли (покупателю + арбитру из залога продавца))
-        Expired // 6 (дедлайн прошёл, возврат сделан)
+        Expired, // 6 (дедлайн прошёл, возврат сделан)
+        Canceled // 7 Продавец отменил сделку пока покупатель и арбитр не были найдены (возравт сделан)
     }
 
     // custom errors
@@ -52,6 +53,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
     error InvalidBuyerAddr(address buyer);
     error InvalidArbiterAddr(address arbiter);
     error WaitTimeExpired(address sender, uint256 time, uint256 WaitTime);
+    error sellerCancelled(uint256 id, uint256 time);
 
     // constants
     uint256 public constant RESOLUTION_DEADLINE = 30 days;
@@ -201,6 +203,30 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
         }
     }
 
+    function cancelAnnouncement(uint256 id, bool decidion) public nonReentrant {
+        if (msg.sender != dealsId[id].seller) {
+            revert AccessDenied(msg.sender, block.timestamp);
+        }
+
+        if (dealsId[id].statusData != StatusData.Listed) {
+            revert InvalidStatus(msg.sender);
+        }
+
+        if (!decidion) {
+            revert sellerCancelled(id, block.timestamp);
+        }
+
+        dealsId[id].statusData = StatusData.Canceled;
+        emit CanceledBySeller(msg.sender, block.timestamp, id);
+
+        uint256 pledge = dealsId[id].sellersPledge;
+        (bool send,) = payable(dealsId[id].seller).call{value: pledge}("");
+
+        if (!send) {
+            revert TransferFailed(dealsId[id].seller, id, pledge);
+        }
+    }
+
     // арбитр принимает решение
     function approveDeal(uint256 id, bool decision) public nonReentrant {
         if (dealsId[id].seller == address(0)) {
@@ -247,6 +273,7 @@ contract Autoria is IAutoriaEvents, ReentrancyGuard {
             if (sendToArbiter != true) {
                 revert TransferFailed(dealsId[id].arbiter, id, dealsId[id].sellersPledge);
             }
+
             emit PledgeSlashed(id, dealsId[id].seller, dealsId[id].arbiter, dealsId[id].sellersPledge, block.timestamp);
         }
     }
